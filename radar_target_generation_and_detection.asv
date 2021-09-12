@@ -102,9 +102,9 @@ subplot(2,1,1)
 
  % plot FFT output 
 plot(signal_fft1_pos);
-title('Radar 1D FFT');
+title('Range from First FFT');
 xlabel('Range to target (m)');
-ylabel('Magnitude of 1D-FFT (dB)');
+ylabel('Magnitude of 1Dfft (dB)');
 axis ([0 200 0 1]);
 
 
@@ -137,8 +137,8 @@ range_axis = linspace(-200,200,Nr/2)*((Nr/2)/400);
 figure,surf(doppler_axis,range_axis,RDM);
 ylabel('Range (m)');
 xlabel('Velocity (m/s)');
-zlabel('Magnitude of 2D-FFT (dB)');
-title('Range-Doppler Response of Target');
+zlabel('Magnitude of 2Dfft (dB)');
+title('Range-Doppler Response');
 % ------- CFAR implementation -------
 
 % Slide Window through the complete Range Doppler Map
