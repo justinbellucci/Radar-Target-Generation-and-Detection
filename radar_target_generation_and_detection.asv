@@ -140,10 +140,10 @@ ylabel('Range (m)');
 xlabel('Velocity (m/s)');
 zlabel('Magnitude of 2D-FFT (dB)');
 title('Range-Doppler Response of Target');
-% ------- CFAR implementation -------
+
+% ------- 2D CFAR implementation -------
 
 % Slide Window through the complete Range Doppler Map
-
 % Select the number of Training Cells in both the dimensions.
 Tc_range = 12;
 Tc_doppler = 12;
@@ -170,10 +170,10 @@ noise_level = zeros(1,1);
 % it a value of 1, else equate it to 0.
 
 
-   % Use RDM[x,y] as the matrix from the output of 2D FFT for implementing
-   % CFAR
+% Use RDM[x,y] as the matrix from the output of 2D FFT 
+% for implementing CFAR
    
- % outer two loops loop through all the cells in the range-doppler map
+% outer two loops loop through all the cells in the range-doppler map
 for i = Tc_range+Gc_range+1:Nr-(Tc_range+Gc_range)
     for j = Tc_doppler+Gc_doppler+1:Nd-(Tc_doppler+Gc_doppler)
         
@@ -187,25 +187,21 @@ for i = Tc_range+Gc_range+1:Nr-(Tc_range+Gc_range)
                     noise_level = noise_level + db2pow(RDM(k,l));
                 end
             end
-
+        end
+        
         num_training_cells = 2*(Tc_range*Gc_range+1)*2*(Tc_doppler*Gc_doppler+1)-(Gc_range*Gc_doppler)-1;
         threshold = pow2db(noise_level/num_training_cells);
 
         % compare the cell under test with the threshold value
         cell_under_test = RDM(i,j);
-        if cell_under_test > threshold;
+        if (cell_under_test > threshold)
             RDM(i,j) = 1;
-        
-        
+        else
+            RDM(i,j) = 0;
         end
     end
 end
 
-            
-                
-
-
-% *%TODO* :
 % The process above will generate a thresholded block, which is smaller 
 % than the Range Doppler Map as the CUT cannot be located at the edges of
 % matrix. Hence,few cells will not be thresholded. To keep the map size same
@@ -213,17 +209,12 @@ end
  
 
 
-
-
-
-
-
-
-% *%TODO* :
-%display the CFAR output using the Surf function like we did for Range
-%Doppler Response output.
-figure,surf(doppler_axis,range_axis,'replace this with output');
+% display the CFAR output using the Surf function like we did for Range
+% Doppler Response output.
+figure,surf(doppler_axis, range_axis, RDM);
 colorbar;
+title('CA-CFAR Filtered Range-Doppler Map');
+xlabel('
 
 
  

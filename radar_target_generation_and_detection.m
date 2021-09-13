@@ -77,7 +77,8 @@ step = 1000;
 % plot the Rx, Tx and Mix signals
 subplot(3,1,1);
 plot(Tx(1:step:end));
-xlabel('Time (s)');
+xlabel('Samples');
+ylabel('Amplitude');
 subplot(3,1,2);
 plot(Rx(1:step:end));
 subplot(3,1,3);
@@ -135,7 +136,8 @@ RDM = 10*log10(RDM); % RDM[x,y] -> matrix output
 % dimensions
 doppler_axis = linspace(-100,100,Nd);
 range_axis = linspace(-200,200,Nr/2)*((Nr/2)/400);
-figure,surf(doppler_axis,range_axis,RDM); 
+figure ('Name','Range-Doppler Response of Target')
+surf(doppler_axis,range_axis,RDM); 
 ylabel('Range (m)');
 xlabel('Velocity (m/s)');
 zlabel('Magnitude of 2D-FFT (dB)');
@@ -145,8 +147,8 @@ title('Range-Doppler Response of Target');
 
 % Slide Window through the complete Range Doppler Map
 % Select the number of Training Cells in both the dimensions.
-Tc_range = 12;
-Tc_doppler = 12;
+Tc_range = 10;
+Tc_doppler = 8;
 
 % Select the number of Guard Cells in both dimensions around the Cell under 
 % test (CUT) for accurate estimation
@@ -154,10 +156,7 @@ Gc_range = 4;
 Gc_doppler = 4;
 
 % offset the threshold by SNR value in dB
-offset = 3;
-
-% Create a vector to store noise_level for each iteration on training cells
-noise_level = zeros(1,1);
+offset = 1.3;
 
 % Design a loop such that it slides the CUT across range doppler map by
 % giving margins at the edges for Training and Guard Cells.
@@ -172,14 +171,17 @@ noise_level = zeros(1,1);
 
 % Use RDM[x,y] as the matrix from the output of 2D FFT 
 % for implementing CFAR
-   
+RDM = RDM / max(RDM(:)); % normalize
+
 % outer two loops loop through all the cells in the range-doppler map
-for i = Tc_range+Gc_range+1:Nr-(Tc_range+Gc_range)
-    for j = Tc_doppler+Gc_doppler+1:Nd-(Tc_doppler+Gc_doppler)
+for i = Tc_range + Gc_range+1 : (Nr/2) - (Tc_range + Gc_range)
+    for j = Tc_doppler + Gc_doppler + 1 : Nd - (Tc_doppler + Gc_doppler)
+        % Create a vector to store noise_level for each iteration on training cells
+        noise_level = zeros(1,1);
         
         % inner loop sums the values from the training cells 
-        for k = i-(Tc_range+Gc_range) : i+(Tc_range+Gc_range)
-            for l = j-(Tc_doppler+Gc_doppler) : j+(Tc_doppler+Gc_doppler)
+        for k = i - (Tc_range + Gc_range) : i + (Tc_range + Gc_range)
+            for l = j - (Tc_doppler + Gc_doppler) : j + (Tc_doppler + Gc_doppler)
                 
                 % determine noise level by measuring it withing the 
                 % training cells
@@ -189,15 +191,17 @@ for i = Tc_range+Gc_range+1:Nr-(Tc_range+Gc_range)
             end
         end
         
-        num_training_cells = 2*(Tc_range*Gc_range+1)*2*(Tc_doppler*Gc_doppler+1)-(Gc_range*Gc_doppler)-1;
-        threshold = pow2db(noise_level/num_training_cells);
-
+        num_training_cells = 2*(Tc_range + Gc_range + 1)*2*(Tc_doppler + Gc_doppler + 1)-(Gc_range * Gc_doppler)-1;
+        threshold = pow2db(noise_level / num_training_cells);
+        threshold = threshold + offset;
+        
         % compare the cell under test with the threshold value
         cell_under_test = RDM(i,j);
-        if (cell_under_test > threshold)
-            RDM(i,j) = 1;
-        else
+        
+        if (cell_under_test < threshold)
             RDM(i,j) = 0;
+        else
+            RDM(i,j) = 1;
         end
     end
 end
@@ -206,13 +210,17 @@ end
 % than the Range Doppler Map as the CUT cannot be located at the edges of
 % matrix. Hence,few cells will not be thresholded. To keep the map size same
 % set those values to 0. 
- 
-
+RDM(RDM ~= 0 & RDM ~= 1) = 0;
 
 % display the CFAR output using the Surf function like we did for Range
 % Doppler Response output.
-figure,surf(doppler_axis, range_axis, RDM);
+figure ('Name','CA-CFAR Filtered Range-Doppler Map')
+surf(doppler_axis, range_axis, RDM);
 colorbar;
+title('CA-CFAR Filtered Range-Doppler Map');
+ylabel('Range (m)');
+xlabel('Velocity (m/s)');
+zlabel('Normalized Magnitude of 2D-FFT (dB)');
 
 
  
